@@ -343,6 +343,9 @@ h1 em, h2 em { color: inherit; font-style: normal; }
 .upload-zone small { color: #987d67; font-size: 8px; }
 .upload-preview { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-top: 14px; }
 .upload-preview img { width: 100%; aspect-ratio: 1; border-radius: 9px; object-fit: cover; }
+.upload-preview__item { display: grid; gap: 5px; }
+.upload-preview__item button { padding: 6px; border: 1px solid rgba(217,92,8,.25); border-radius: 7px; background: white; color: var(--orange-deep); font-size: 8px; cursor: pointer; }
+.upload-preview__item button:disabled { opacity: .6; cursor: wait; }
 .calendar-grid .weekday { min-height: 22px; background: transparent; color: var(--orange-dark); font-size: 8px; font-weight: 800; }
 
 @keyframes pulse { 0%,100% { box-shadow: 0 0 0 5px rgba(255,255,255,.14); } 50% { box-shadow: 0 0 0 9px rgba(255,255,255,.05); } }

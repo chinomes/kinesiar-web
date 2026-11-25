@@ -1,48 +1,62 @@
-KINESIAR WEB — PRIMERA MAQUETA VISUAL
-
-IDENTIDAD Y DISEÑO
-- Paleta principal naranja y blanco, con texto oscuro para facilitar la lectura.
-- Video vertical ubicado a un costado del contenido en computadora; en celulares pasa debajo del texto.
-- Tarjetas de presentación flotantes con giro 3D: al pasar el cursor muestran el reverso y en pantallas táctiles se giran al tocarlas.
-- Menú circular con el logotipo: se despliega al pasar el cursor o al tocarlo.
-- Diseño adaptable a computadora, tablet y celular.
+KINESIAR WEB — SITIO CON TURNOS Y ADMINISTRACIÓN
 
 ARCHIVOS PRINCIPALES
-- index.html: estructura de la página.
-- css/estilos.css: diseño, colores, animaciones y adaptación a pantallas.
-- js/funciones.js: menú, tarjetas giratorias, validación de formularios y panel de demostración.
-- assets/video/fondo.mp4: video vertical recibido, reproducido sin sonido y en bucle.
-- assets/img/logo-kinesiar.png: logotipo extraído de las imágenes proporcionadas.
-- assets/img/referencias/: capturas incluidas en el ZIP original para seleccionar recursos después.
+- index.html: página y formularios públicos.
+- css/estilos.css: diseño adaptable a computadora, tablet y celular.
+- js/funciones.js: turnos, calendario, administración, autenticación y almacenamiento.
+- js/supabase-config.js: URL del proyecto Supabase y clave publishable.
+- supabase/migrations/: tablas, permisos RLS y bucket de imágenes.
+- assets/: imágenes y video usados por el sitio.
 
-CÓMO ABRIR
-1. Descomprimí KINESIAR-WEB.zip.
-2. Abrí index.html con Chrome, Edge o Firefox.
-3. Para editar el proyecto, abrí la carpeta KINESIAR-WEB en Visual Studio Code.
-4. Para probar los cambios, actualizá la pestaña del navegador. También podés utilizar la extensión Live Server.
+CONFIGURACIÓN INICIAL DE SUPABASE
+1. Abrí el proyecto de Supabase vinculado al sitio.
+2. Entrá en SQL Editor > New query.
+3. Copiá y ejecutá el contenido completo de:
+   supabase/migrations/20260101000000_kinesiar_schema.sql
+4. En Authentication > Users, creá el usuario que usarás como administrador.
+   Supabase Auth requiere correo electrónico y contraseña; no admite iniciar sesión
+   directamente con un nombre de usuario como "cucha2026".
+5. Copiá el UUID de ese usuario desde Authentication > Users. En SQL Editor ejecutá
+   lo siguiente y reemplazá el texto de ejemplo por el UUID real:
 
-QUÉ FUNCIONA
-- Formulario de solicitud con validación; las fechas que el administrador bloquea no aceptan nuevas solicitudes.
-- Panel con listado de solicitudes, cambio de estado (Pendiente, Confirmado o Cancelado) y edición de fecha/franja horaria.
-- Calendario mensual interactivo: muestra las solicitudes por día, permite revisar cada fecha y bloquearla o volver a habilitarla.
-- Edición del título y presentación de inicio, los textos de turnos, y los nombres/descripciones de los tres servicios.
-- Edición de contacto (WhatsApp, teléfono, correo, dirección, ciudad, redes sociales, web, horarios y texto introductorio).
-- Las solicitudes, los bloqueos y los cambios de página/contacto se guardan localmente y se actualizan entre pestañas del mismo navegador y origen.
-- El panel verifica el acceso inicial con PBKDF2 y no guarda la contraseña en texto plano. Usá el usuario y la contraseña iniciales definidos para este sitio.
+   insert into public.kinesiar_admins (user_id)
+   values ('PEGAR-ACA-EL-UUID-DEL-USUARIO');
 
-LÍMITES IMPORTANTES: NO HAY SERVIDOR NI BASE DE DATOS
-- La autenticación ocurre en el navegador. El verificador de contraseña está incluido en el sitio y puede inspeccionarse o atacarse fuera de línea; no protege un sitio publicado ni datos sensibles. Para proteger el panel de verdad hace falta autenticación en servidor y autorización del lado del servidor.
-- Las solicitudes y ediciones se guardan solo en el navegador y origen donde se cargaron. No se reciben avisos y no se comparten con otros dispositivos o navegadores.
-- “Confirmado” es el estado que asigna el administrador; enviar el formulario solo crea una solicitud pendiente, no reserva ni confirma un turno en una agenda central.
-- Las imágenes cargadas se muestran durante la sesión actual; no se suben a un servidor.
-- Para ofrecer turnos públicos reales hay que conectar una base de datos, un backend con validación de disponibilidad y un sistema de autenticación seguro.
-- Para que el almacenamiento del navegador sea consistente, abrí la página desde un servidor local (por ejemplo Live Server) o desde el hosting HTTPS, no como archivo suelto.
+6. Publicá/actualizá los archivos del repositorio y abrí el sitio desde su URL HTTPS.
+7. En “Acceso administrador”, ingresá el correo y la contraseña que creaste en
+   Supabase Auth. No compartas la contraseña con nadie ni la incluyas en archivos.
 
-VIDEO
-El video se ve vertical a la derecha en computadora y debajo del contenido principal en celular. El archivo recibido conserva textos e iconos superpuestos de la interfaz de Reels. Para una presentación más profesional, se recomienda reemplazarlo por una exportación limpia del video, sin interfaz de Instagram.
+La URL y la clave publishable del proyecto están en js/supabase-config.js. La clave
+publishable está diseñada para usarse en el navegador; la seguridad depende de las
+políticas RLS de la migración. Nunca agregues al sitio, al repositorio ni a GitHub una
+clave secret/service_role ni la contraseña de la base de datos.
 
-ADMINISTRACIÓN
-- Abrí “Acceso administrador” e ingresá las credenciales iniciales entregadas para el sitio.
-- En “Calendario”, seleccioná un día para revisar sus solicitudes y cambiar su disponibilidad. Bloquear un día impide solicitudes nuevas, pero no cancela las que ya llegaron. En “Turnos”, también podés reprogramar la fecha y franja horaria de una solicitud.
-- En “Turnos”, cambiá el estado de cada solicitud. La confirmación debe coordinarse manualmente con la persona.
-- En “Contenido” y “Contacto”, editá los textos públicos y los datos del consultorio y guardalos. Los cambios se reflejan en esta página.
+FUNCIONES
+- Las solicitudes de turno se guardan en Supabase con estado Pendiente.
+- El administrador puede consultar solicitudes, cambiar su estado y reprogramar
+  fecha y franja horaria.
+- El calendario permite bloquear y habilitar días. Los bloqueos se verifican en
+  Supabase al insertar una solicitud, además de mostrarse en el sitio.
+- El administrador puede editar textos públicos y datos de contacto.
+- Las opiniones se guardan como Pendientes para revisión administrativa.
+- Las imágenes de la galería se almacenan en el bucket público kinesiar-gallery;
+  únicamente las cuentas autorizadas pueden subirlas o eliminarlas.
+- La publishable key puede ser visible. El acceso a datos personales y las
+  modificaciones administrativas están protegidos por RLS y autenticación.
+
+LÍMITES Y NOTAS
+- La configuración, el esquema y el usuario administrador deben estar creados en
+  Supabase antes de que los formularios y el panel funcionen.
+- Las opiniones se reciben y pueden revisarse desde el panel, pero esta versión no
+  las publica automáticamente en la página.
+- Las solicitudes son pedidos pendientes; no se envían notificaciones ni se
+  confirma automáticamente la disponibilidad con la persona.
+- Los datos que existían en localStorage en una versión anterior no se migran
+  automáticamente a Supabase.
+- Para publicar cambios en GitHub Pages, subí los archivos actualizados a la rama y
+  carpeta configuradas para Pages. Los visitantes necesitan recargar la página.
+
+DISEÑO
+- Paleta naranja, blanco y texto oscuro.
+- Menú circular y tarjetas de servicios interactivas.
+- Video vertical en escritorio y versión adaptable para móviles.

@@ -1,15 +1,18 @@
 (() => {
   'use strict';
+
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
-  const STORAGE = {
-    appointments: 'kinesiar_demo_appointments',
-    reviews: 'kinesiar_demo_reviews',
-    contact: 'kinesiar_demo_contact',
-    blockedDates: 'kinesiar_blocked_dates',
-    pageContent: 'kinesiar_page_content'
+  const config = window.KINESIAR_SUPABASE_CONFIG;
+  const supabaseClient = window.supabase && config
+    ? window.supabase.createClient(config.url, config.publishableKey)
+    : null;
+  const STORAGE_BUCKET = 'kinesiar-gallery';
+
+  const CONTACT_DEFAULTS = {
+    whatsapp: '', telefono: '', email: '', direccion: '', ciudad: '',
+    instagram: '@kinesiar_salta', facebook: '', web: '', horarios: '', descripcion: ''
   };
-  const CONTACT_DEFAULTS = { whatsapp: '', telefono: '', email: '', direccion: '', ciudad: '', instagram: '@kinesiar_salta', facebook: '', web: '', horarios: '', descripcion: '' };
   const PAGE_DEFAULTS = {
     heroTitleFirst: 'Volvé a moverte.',
     heroTitleSecond: 'Sentite mejor.',
@@ -22,25 +25,17 @@
     serviceThreeTitle: 'Bienestar',
     serviceThreeDescription: 'La información, imagen y contenido de esta tarjeta se completarán más adelante.'
   };
-  const ADMIN_USERNAME = 'cucha2026';
-  const ADMIN_PASSWORD_SALT = 'cdxJ2X2XnysfUX7/cXWeug==';
-  const ADMIN_PASSWORD_HASH = 't7dkvf+alk7Ws68h5oYfs+so19PCCI4fChqIov7bHgM=';
-  const ADMIN_PASSWORD_ITERATIONS = 310000;
-  const readStore = (key) => {
-    try {
-      const value = JSON.parse(localStorage.getItem(key) || '[]');
-      return Array.isArray(value) ? value : [];
-    }
-    catch { return []; }
-  };
-  const writeStore = (key, value) => {
-    try { localStorage.setItem(key, JSON.stringify(value)); return true; }
-    catch { return false; }
-  };
-  const readObjectStore = (key, fallback) => {
-    try { return { ...fallback, ...(JSON.parse(localStorage.getItem(key) || '{}') || {}) }; }
-    catch { return { ...fallback }; }
-  };
+
+  let siteSettings = { contact: { ...CONTACT_DEFAULTS }, pageContent: { ...PAGE_DEFAULTS } };
+  let appointments = [];
+  let reviews = [];
+  let blockedDates = [];
+  let uploadedImages = [];
+  let backendReady = false;
+  let isAdmin = false;
+  let calendarDate = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  let selectedCalendarDate = '';
+  let currentRating = 0;
 
   const localDateString = (date = new Date()) => {
     const year = date.getFullYear();
@@ -49,14 +44,66 @@
     return `${year}-${month}-${day}`;
   };
   const todayString = localDateString();
-  $('#year').textContent = new Date().getFullYear();
+  selectedCalendarDate = todayString;
+
   const dateInput = $('#booking-form [name="fecha"]');
   if (dateInput) dateInput.min = todayString;
+  $('#year').textContent = new Date().getFullYear();
+
+  function setFeedback(target, message, type = '') {
+    if (!target) return;
+    target.textContent = message;
+    target.className = `form-feedback${type ? ` form-feedback--${type}` : ''}`;
+  }
+
+  function setAdminFeedback(target, message, success = false) {
+    if (!target) return;
+    target.textContent = message;
+    target.style.color = success ? '#28713a' : '#b63333';
+  }
+
+  function errorMessage(action, error) {
+    const reason = error && error.message ? ` ${error.message}` : '';
+    return `No se pudo ${action}.${reason}`;
+  }
+
+  function requireSupabase() {
+    if (!supabaseClient) throw new Error('No se pudo inicializar Supabase. Revisá la configuración y la conexión a internet.');
+    return supabaseClient;
+  }
+
+  function getMissing(form) {
+    const missing = [];
+    $$('[required]', form).forEach(control => {
+      let valid = control.type === 'checkbox' ? control.checked : String(control.value || '').trim() !== '';
+      if (control.type === 'email' && control.value.trim()) valid = control.checkValidity();
+      const wrapper = control.closest('.field, .check-line, .rating-field');
+      if (!valid && wrapper) {
+        wrapper.classList.add('is-invalid');
+        missing.push(control);
+      } else if (wrapper) wrapper.classList.remove('is-invalid');
+    });
+    return missing;
+  }
+
+  function resetBall(button) {
+    if (!button) return;
+    button.classList.remove('is-warning', 'is-success');
+    button.disabled = false;
+    const label = $('.submit-ball__text', button);
+    if (label) label.style.display = '';
+  }
+
+  function markButton(button, state) {
+    button.classList.remove('is-warning', 'is-success');
+    button.classList.add(state);
+    button.disabled = true;
+  }
 
   // Circular menu: opens on hover (desktop) and click (all devices).
   const orbitMenu = $('#orbit-menu');
   const orbitToggle = $('#orbit-toggle');
-  const setMenu = (open) => {
+  const setMenu = open => {
     orbitMenu.classList.toggle('is-open', open);
     orbitToggle.setAttribute('aria-expanded', String(open));
     orbitToggle.setAttribute('aria-label', open ? 'Cerrar menú' : 'Abrir menú');
@@ -80,61 +127,27 @@
     });
   });
 
-  function getMissing(form) {
-    const missing = [];
-    $$('[required]', form).forEach(control => {
-      let valid = control.type === 'checkbox' ? control.checked : String(control.value || '').trim() !== '';
-      if (control.type === 'email' && control.value.trim()) valid = control.checkValidity();
-      const wrapper = control.closest('.field, .check-line, .rating-field');
-      if (!valid && wrapper) {
-        wrapper.classList.add('is-invalid');
-        missing.push(control);
-      } else if (wrapper) wrapper.classList.remove('is-invalid');
-    });
-    return missing;
-  }
-
-  function resetBall(button) {
-    button.classList.remove('is-warning', 'is-success');
-    button.disabled = false;
-    const label = $('.submit-ball__text', button);
-    if (label) label.style.display = '';
-  }
-
-  function markButton(button, state) {
-    button.classList.remove('is-warning', 'is-success');
-    button.classList.add(state);
-    button.disabled = true;
-  }
-
-  function setFeedback(target, message, type = '') {
-    target.textContent = message;
-    target.className = `form-feedback${type ? ` form-feedback--${type}` : ''}`;
-  }
-
   function isDateBlocked(date) {
-    return readStore(STORAGE.blockedDates).includes(date);
+    return blockedDates.includes(date);
   }
 
   function renderBookingDateHint() {
     const hint = $('#booking-date-hint');
     const wrapper = dateInput.closest('.field');
     const blocked = Boolean(dateInput.value && isDateBlocked(dateInput.value));
-
     hint.textContent = blocked
       ? 'Ese día está bloqueado. Elegí otra fecha.'
       : (dateInput.value
-          ? 'Podés enviar una solicitud para este día; el turno debe ser confirmado por el consultorio.'
-          : 'Las fechas bloqueadas no aceptan solicitudes.');
+        ? 'Podés enviar una solicitud para este día; el turno debe ser confirmado por el consultorio.'
+        : 'Las fechas bloqueadas no aceptan solicitudes.');
     hint.classList.toggle('is-unavailable', blocked);
     wrapper.classList.toggle('is-invalid', blocked);
-
     return !blocked;
   }
 
   dateInput.addEventListener('change', renderBookingDateHint);
 
-  // Public contact section: data can be changed from the administrator panel.
+  // Public contact section.
   function safeWebUrl(value) {
     const raw = String(value || '').trim();
     if (!raw) return '';
@@ -181,7 +194,7 @@
   }
 
   function renderContact() {
-    const info = readObjectStore(STORAGE.contact, CONTACT_DEFAULTS);
+    const info = siteSettings.contact;
     const description = $('#contact-description');
     if (description) description.textContent = info.descripcion.trim() || 'Los datos de contacto se podrán actualizar desde el panel de administración.';
     const grid = $('#contact-grid');
@@ -222,7 +235,6 @@
     }
     socialTile.append(socialLinks);
     grid.append(socialTile);
-
     grid.append(makeContactTile('◷', 'HORARIOS DE ATENCIÓN', info.horarios || 'Horarios a completar', info.horarios ? 'Consultá disponibilidad para tu turno' : 'Agregá los días y horarios de atención'));
 
     const websiteUrl = safeWebUrl(info.web);
@@ -232,11 +244,71 @@
   function loadContactForm() {
     const form = $('#contact-form');
     if (!form) return;
-    const info = readObjectStore(STORAGE.contact, CONTACT_DEFAULTS);
-    Object.entries(info).forEach(([name, value]) => {
+    Object.entries(siteSettings.contact).forEach(([name, value]) => {
       const control = form.elements.namedItem(name);
       if (control) control.value = value || '';
     });
+  }
+
+  function applyPageContent() {
+    const textBindings = {
+      'hero-title-first': 'heroTitleFirst',
+      'hero-title-second': 'heroTitleSecond',
+      'hero-description': 'heroDescription',
+      'booking-description': 'bookingDescription',
+      'service-one-title': 'serviceOneTitle',
+      'service-one-back-title': 'serviceOneTitle',
+      'service-one-description': 'serviceOneDescription',
+      'service-two-title': 'serviceTwoTitle',
+      'service-two-back-title': 'serviceTwoTitle',
+      'service-two-description': 'serviceTwoDescription',
+      'service-three-title': 'serviceThreeTitle',
+      'service-three-back-title': 'serviceThreeTitle',
+      'service-three-description': 'serviceThreeDescription'
+    };
+    Object.entries(textBindings).forEach(([id, name]) => {
+      const target = document.getElementById(id);
+      if (target) target.textContent = siteSettings.pageContent[name] || PAGE_DEFAULTS[name];
+    });
+  }
+
+  const pageContentForm = $('#page-content-form');
+  const contactForm = $('#contact-form');
+
+  function loadPageContentForm() {
+    Object.entries(PAGE_DEFAULTS).forEach(([name, value]) => {
+      const control = pageContentForm.elements.namedItem(name);
+      if (control) control.value = siteSettings.pageContent[name] || value;
+    });
+  }
+
+  async function loadPublicData() {
+    try {
+      const client = requireSupabase();
+      const [settingsResult, blockedResult] = await Promise.all([
+        client.from('site_settings').select('page_content, contact').eq('id', 1).single(),
+        client.from('blocked_dates').select('blocked_date').order('blocked_date')
+      ]);
+      if (settingsResult.error) throw settingsResult.error;
+      if (blockedResult.error) throw blockedResult.error;
+
+      siteSettings = {
+        pageContent: { ...PAGE_DEFAULTS, ...(settingsResult.data.page_content || {}) },
+        contact: { ...CONTACT_DEFAULTS, ...(settingsResult.data.contact || {}) }
+      };
+      blockedDates = (blockedResult.data || []).map(row => row.blocked_date);
+      backendReady = true;
+      applyPageContent();
+      renderContact();
+      loadContactForm();
+      loadPageContentForm();
+      renderBookingDateHint();
+      renderCalendar();
+    } catch (error) {
+      backendReady = false;
+      console.error('No se pudo cargar la configuración de Supabase.', error);
+      setFeedback($('#booking-feedback'), errorMessage('conectar con el sistema de turnos', error), 'warning');
+    }
   }
 
   const bookingForm = $('#booking-form');
@@ -245,7 +317,7 @@
     if (wrapper) wrapper.classList.remove('is-invalid');
     resetBall($('.submit-ball', bookingForm));
   });
-  bookingForm.addEventListener('submit', event => {
+  bookingForm.addEventListener('submit', async event => {
     event.preventDefault();
     const button = $('.submit-ball', bookingForm);
     const feedback = $('#booking-feedback');
@@ -257,31 +329,49 @@
       missing[0].focus({ preventScroll: true });
       return;
     }
+    if (!backendReady) {
+      markButton(button, 'is-warning');
+      setFeedback(feedback, 'El sistema de turnos no está conectado todavía. No se envió la solicitud.', 'warning');
+      return;
+    }
     if (!renderBookingDateHint()) {
       markButton(button, 'is-warning');
       setFeedback(feedback, 'La fecha elegida está bloqueada. Seleccioná otro día para continuar.', 'warning');
       dateInput.focus({ preventScroll: true });
       return;
     }
-    const data = Object.fromEntries(new FormData(bookingForm).entries());
-    const appointments = readStore(STORAGE.appointments);
-    appointments.unshift({
-      ...data,
-      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-      createdAt: new Date().toISOString(),
-      status: 'Pendiente'
-    });
-    const saved = writeStore(STORAGE.appointments, appointments);
-    markButton(button, saved ? 'is-success' : 'is-warning');
-    setFeedback(feedback, saved
-      ? '¡Solicitud recibida en este navegador! Quedó pendiente de confirmación por el consultorio.'
-      : 'La solicitud se validó, pero el navegador no permitió guardarla. Revisá la configuración de almacenamiento.', saved ? 'success' : 'warning');
-    refreshAdmin();
+
+    const data = new FormData(bookingForm);
+    button.disabled = true;
+    try {
+      const { error } = await requireSupabase().from('appointments').insert({
+        name: String(data.get('nombre')).trim(),
+        phone: String(data.get('telefono')).trim(),
+        email: String(data.get('email') || '').trim() || null,
+        service: String(data.get('servicio')),
+        appointment_date: String(data.get('fecha')),
+        preferred_time: String(data.get('horario') || 'A convenir'),
+        message: String(data.get('mensaje') || '').trim() || null,
+        privacy_accepted: true
+      });
+      if (error) throw error;
+
+      markButton(button, 'is-success');
+      setFeedback(feedback, '¡Solicitud enviada! Quedó pendiente de confirmación por el consultorio.', 'success');
+      bookingForm.reset();
+      dateInput.min = todayString;
+      renderBookingDateHint();
+      if (isAdmin) await refreshAdmin();
+    } catch (error) {
+      console.error('No se pudo enviar la solicitud de turno.', error);
+      markButton(button, 'is-warning');
+      setFeedback(feedback, errorMessage('enviar la solicitud', error), 'warning');
+    }
   });
 
-  // Star rating selection.
+  // Star rating selection and public review submission.
+  const reviewForm = $('#review-form');
   const ratingInput = $('#review-form [name="puntuacion"]');
-  let currentRating = 0;
   $$('.stars button').forEach(star => star.addEventListener('click', () => {
     currentRating = Number(star.dataset.rating);
     ratingInput.value = String(currentRating);
@@ -289,9 +379,12 @@
     $$('.stars button').forEach(button => button.classList.toggle('is-selected', Number(button.dataset.rating) <= currentRating));
     $('.rating-field').classList.remove('is-invalid');
   }));
-  const reviewForm = $('#review-form');
-  reviewForm.addEventListener('input', event => { event.target.closest('.field')?.classList.remove('is-invalid'); resetBall($('.submit-ball', reviewForm)); });
-  reviewForm.addEventListener('submit', event => {
+  reviewForm.addEventListener('input', event => {
+    const wrapper = event.target.closest('.field');
+    if (wrapper) wrapper.classList.remove('is-invalid');
+    resetBall($('.submit-ball', reviewForm));
+  });
+  reviewForm.addEventListener('submit', async event => {
     event.preventDefault();
     const button = $('.submit-ball', reviewForm);
     const feedback = $('#review-feedback');
@@ -308,201 +401,215 @@
       if (first) first.focus({ preventScroll: true });
       return;
     }
-    const data = Object.fromEntries(new FormData(reviewForm).entries());
-    const reviews = readStore(STORAGE.reviews);
-    reviews.unshift({ ...data, id: Date.now(), createdAt: new Date().toISOString() });
-    const saved = writeStore(STORAGE.reviews, reviews);
-    markButton(button, 'is-success');
-    setFeedback(feedback, saved
-      ? '¡Gracias por compartir tu experiencia! El comentario quedó guardado localmente en esta demostración.'
-      : 'La opinión está completa, pero no se pudo guardar en este navegador.', 'success');
-    refreshAdmin();
+    if (!backendReady) {
+      markButton(button, 'is-warning');
+      setFeedback(feedback, 'El sistema no está conectado todavía. No se envió la opinión.', 'warning');
+      return;
+    }
+
+    const data = new FormData(reviewForm);
+    button.disabled = true;
+    try {
+      const { error } = await requireSupabase().from('reviews').insert({
+        name: String(data.get('nombre')).trim(),
+        rating: currentRating,
+        comment: String(data.get('comentario')).trim()
+      });
+      if (error) throw error;
+      markButton(button, 'is-success');
+      setFeedback(feedback, '¡Gracias! Tu opinión fue recibida y está pendiente de revisión.', 'success');
+      reviewForm.reset();
+      currentRating = 0;
+      $$('.stars button').forEach(button => button.classList.remove('is-selected'));
+      if (isAdmin) await refreshAdmin();
+    } catch (error) {
+      console.error('No se pudo guardar la opinión.', error);
+      markButton(button, 'is-warning');
+      setFeedback(feedback, errorMessage('guardar la opinión', error), 'warning');
+    }
   });
 
-  // Admin demo modal.
+  // Supabase Auth and administrator panel.
   const modal = $('#admin-modal');
   const loginForm = $('#admin-login-form');
   const loginFeedback = $('#admin-login-feedback');
-  const openAdmin = () => {
-    $('#admin-login').hidden = false;
-    $('#admin-dashboard').hidden = true;
+
+  const showAdminModal = () => {
+    $('#admin-login').hidden = !isAdmin;
+    $('#admin-dashboard').hidden = !isAdmin;
     loginFeedback.textContent = '';
     modal.classList.add('is-open');
     modal.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
   };
   const closeAdmin = () => {
-    $('#admin-dashboard').hidden = true;
-    $('#admin-login').hidden = false;
-    loginForm.reset();
     modal.classList.remove('is-open');
     modal.setAttribute('aria-hidden', 'true');
     document.body.style.overflow = '';
   };
-  $('#open-admin').addEventListener('click', openAdmin);
+  $('#open-admin').addEventListener('click', showAdminModal);
   $$('[data-close-admin]').forEach(button => button.addEventListener('click', closeAdmin));
-  const decodeBase64 = value => Uint8Array.from(atob(value), character => character.charCodeAt(0));
-  async function verifyAdminCredentials(username, password) {
-    if (username !== ADMIN_USERNAME) return false;
-    if (!window.crypto || !window.crypto.subtle) {
-      throw new Error('La verificación segura de contraseña no está disponible en este origen.');
-    }
 
-    const key = await window.crypto.subtle.importKey(
-      'raw',
-      new TextEncoder().encode(password),
-      'PBKDF2',
-      false,
-      ['deriveBits']
-    );
-    const digest = new Uint8Array(await window.crypto.subtle.deriveBits({
-      name: 'PBKDF2',
-      salt: decodeBase64(ADMIN_PASSWORD_SALT),
-      iterations: ADMIN_PASSWORD_ITERATIONS,
-      hash: 'SHA-256'
-    }, key, 256));
-    const expected = decodeBase64(ADMIN_PASSWORD_HASH);
-    let difference = digest.length ^ expected.length;
-
-    for (let index = 0; index < Math.min(digest.length, expected.length); index++) {
-      difference |= digest[index] ^ expected[index];
-    }
-
-    return difference === 0;
+  async function authorizeCurrentUser() {
+    if (!supabaseClient) return false;
+    const { data, error } = await supabaseClient.rpc('is_kinesiar_admin');
+    if (error) throw error;
+    return data === true;
   }
 
   loginForm.addEventListener('submit', async event => {
     event.preventDefault();
     const submit = $('button[type="submit"]', loginForm);
     submit.disabled = true;
-
+    loginFeedback.textContent = '';
     try {
       const credentials = new FormData(loginForm);
-      const valid = await verifyAdminCredentials(
-        String(credentials.get('usuario') || ''),
-        String(credentials.get('clave') || '')
-      );
-
-      if (!valid) {
-        loginFeedback.textContent = 'Usuario o contraseña incorrectos.';
-        loginForm.elements.namedItem('clave').value = '';
+      const { error } = await requireSupabase().auth.signInWithPassword({
+        email: String(credentials.get('email')).trim(),
+        password: String(credentials.get('password'))
+      });
+      if (error) throw error;
+      if (!(await authorizeCurrentUser())) {
+        await supabaseClient.auth.signOut();
+        loginFeedback.textContent = 'La cuenta existe, pero todavía no tiene permisos de administrador.';
+        loginForm.elements.namedItem('password').value = '';
         return;
       }
 
-      loginFeedback.textContent = '';
+      isAdmin = true;
       loginForm.reset();
       $('#admin-login').hidden = true;
       $('#admin-dashboard').hidden = false;
-      refreshAdmin();
+      await refreshAdmin();
     } catch (error) {
-      console.error('No se pudo verificar el acceso administrador.', error);
-      loginFeedback.textContent = 'Este navegador no permite verificar la contraseña. Abrí el sitio desde HTTPS o localhost.';
+      console.error('No se pudo iniciar sesión como administrador.', error);
+      loginFeedback.textContent = error.message || 'No se pudo iniciar sesión. Revisá el correo y la contraseña.';
+      loginForm.elements.namedItem('password').value = '';
     } finally {
       submit.disabled = false;
     }
   });
-  $('#admin-logout').addEventListener('click', () => {
-    closeAdmin();
+
+  $('#admin-logout').addEventListener('click', async () => {
+    try {
+      const { error } = await requireSupabase().auth.signOut();
+      if (error) throw error;
+      isAdmin = false;
+      appointments = [];
+      reviews = [];
+      closeAdmin();
+      renderCalendar();
+    } catch (error) {
+      console.error('No se pudo cerrar la sesión de Supabase.', error);
+      setAdminFeedback(loginFeedback, errorMessage('cerrar sesión', error));
+    }
   });
+
   $$('.admin-tab').forEach(tab => tab.addEventListener('click', () => {
     $$('.admin-tab').forEach(item => item.classList.toggle('is-active', item === tab));
     $$('.admin-content').forEach(panel => panel.hidden = panel.id !== `admin-${tab.dataset.tab}`);
   }));
 
-  const contactForm = $('#contact-form');
-  loadContactForm();
+  async function restoreAdminSession() {
+    if (!supabaseClient) return;
+    const { data, error } = await supabaseClient.auth.getSession();
+    if (error) {
+      console.error('No se pudo restaurar la sesión de Supabase.', error);
+      return;
+    }
+    if (!data.session) return;
+    try {
+      isAdmin = await authorizeCurrentUser();
+      if (!isAdmin) await supabaseClient.auth.signOut();
+    } catch (error) {
+      console.error('No se pudo verificar el permiso de administrador.', error);
+      await supabaseClient.auth.signOut();
+    }
+  }
+
+  // Administrator changes to contact information and public copy.
   if (contactForm) {
-    contactForm.addEventListener('submit', event => {
+    contactForm.addEventListener('submit', async event => {
       event.preventDefault();
-      const formData = new FormData(contactForm);
-      const info = Object.fromEntries(formData.entries());
+      const info = Object.fromEntries(new FormData(contactForm).entries());
       const feedback = $('#contact-save-feedback');
-      const saved = writeStore(STORAGE.contact, { ...CONTACT_DEFAULTS, ...info });
-      if (saved) {
+      try {
+        const { error } = await requireSupabase().from('site_settings')
+          .update({ contact: { ...CONTACT_DEFAULTS, ...info }, updated_at: new Date().toISOString() })
+          .eq('id', 1);
+        if (error) throw error;
+        siteSettings.contact = { ...CONTACT_DEFAULTS, ...info };
         renderContact();
-        feedback.textContent = '¡Listo! La información se actualizó en esta página y quedó guardada en este navegador.';
-        feedback.style.color = '#28713a';
-      } else {
-        feedback.textContent = 'No se pudo guardar. El navegador puede tener el almacenamiento bloqueado o lleno.';
-        feedback.style.color = '#b63333';
+        setAdminFeedback(feedback, 'La información de contacto se guardó en Supabase.', true);
+      } catch (error) {
+        console.error('No se pudo guardar la información de contacto.', error);
+        setAdminFeedback(feedback, errorMessage('guardar los datos de contacto', error));
       }
     });
   }
 
-  function applyPageContent() {
-    const content = readObjectStore(STORAGE.pageContent, PAGE_DEFAULTS);
-    const textBindings = {
-      'hero-title-first': 'heroTitleFirst',
-      'hero-title-second': 'heroTitleSecond',
-      'hero-description': 'heroDescription',
-      'booking-description': 'bookingDescription',
-      'service-one-title': 'serviceOneTitle',
-      'service-one-back-title': 'serviceOneTitle',
-      'service-one-description': 'serviceOneDescription',
-      'service-two-title': 'serviceTwoTitle',
-      'service-two-back-title': 'serviceTwoTitle',
-      'service-two-description': 'serviceTwoDescription',
-      'service-three-title': 'serviceThreeTitle',
-      'service-three-back-title': 'serviceThreeTitle',
-      'service-three-description': 'serviceThreeDescription'
-    };
-
-    Object.entries(textBindings).forEach(([id, name]) => {
-      const target = document.getElementById(id);
-      if (target) target.textContent = content[name];
-    });
-  }
-
-  const pageContentForm = $('#page-content-form');
-
-  function loadPageContentForm() {
-    const content = readObjectStore(STORAGE.pageContent, PAGE_DEFAULTS);
-    Object.entries(PAGE_DEFAULTS).forEach(([name, value]) => {
-      pageContentForm.elements.namedItem(name).value = content[name] || value;
-    });
-  }
-
-  loadPageContentForm();
-  applyPageContent();
-
-  pageContentForm.addEventListener('submit', event => {
+  pageContentForm.addEventListener('submit', async event => {
     event.preventDefault();
     const values = Object.fromEntries(new FormData(pageContentForm).entries());
     const feedback = $('#page-save-feedback');
-
-    if (writeStore(STORAGE.pageContent, values)) {
+    try {
+      const { error } = await requireSupabase().from('site_settings')
+        .update({ page_content: values, updated_at: new Date().toISOString() })
+        .eq('id', 1);
+      if (error) throw error;
+      siteSettings.pageContent = { ...PAGE_DEFAULTS, ...values };
       applyPageContent();
-      feedback.textContent = 'Los textos públicos se actualizaron y quedaron guardados en este navegador.';
-      feedback.style.color = '#28713a';
-    } else {
-      feedback.textContent = 'No se pudieron guardar los cambios. Revisá el almacenamiento del navegador.';
-      feedback.style.color = '#b63333';
+      setAdminFeedback(feedback, 'Los textos públicos se guardaron en Supabase.', true);
+    } catch (error) {
+      console.error('No se pudo guardar el contenido de la página.', error);
+      setAdminFeedback(feedback, errorMessage('guardar el contenido', error));
     }
   });
 
+  function mapAppointment(row) {
+    return {
+      id: row.id,
+      nombre: row.name,
+      telefono: row.phone,
+      email: row.email,
+      servicio: row.service,
+      fecha: row.appointment_date,
+      horario: row.preferred_time,
+      mensaje: row.message,
+      status: row.status,
+      createdAt: row.created_at
+    };
+  }
+
+  function mapReview(row) {
+    return { id: row.id, nombre: row.name, puntuacion: row.rating, comentario: row.comment, createdAt: row.created_at };
+  }
+
   function renderList(container, items, type, emptyMessage = '') {
-    container.innerHTML = '';
+    container.replaceChildren();
     if (!items.length) {
       const empty = document.createElement('div');
       empty.className = 'admin-empty';
       empty.textContent = emptyMessage || (
-        type === 'appointment'
-          ? 'Todavía no hay solicitudes. Las que se envíen desde este navegador aparecerán acá.'
-          : 'Todavía no hay opiniones guardadas en este navegador.'
+        type === 'appointment' ? 'Todavía no hay solicitudes.' : 'Todavía no hay opiniones recibidas.'
       );
       container.append(empty);
       return;
     }
+
     items.forEach(item => {
       const node = document.createElement('article');
       node.className = 'admin-list__item';
       const heading = document.createElement('b');
-      heading.textContent = type === 'appointment' ? (item.nombre || 'Sin nombre') : `${item.nombre || 'Anónimo'} · ${item.puntuacion || 0}/5 ★`;
+      heading.textContent = type === 'appointment'
+        ? (item.nombre || 'Sin nombre')
+        : `${item.nombre || 'Anónimo'} · ${item.puntuacion || 0}/5 ★`;
       const meta = document.createElement('span');
       meta.textContent = type === 'appointment'
         ? `${item.telefono || 'Sin teléfono'} · ${item.fecha || 'Sin fecha'} · ${item.horario || 'Horario a convenir'} · ${item.status || 'Pendiente'}`
         : new Date(item.createdAt).toLocaleString('es-AR');
       node.append(heading, meta);
+
       if (type === 'appointment') {
         const statusLabel = document.createElement('label');
         statusLabel.className = 'admin-status';
@@ -515,25 +622,22 @@
           option.textContent = value;
           status.append(option);
         });
-        status.value = ['Pendiente', 'Confirmado', 'Cancelado'].includes(item.status)
-          ? item.status
-          : 'Pendiente';
+        status.value = ['Pendiente', 'Confirmado', 'Cancelado'].includes(item.status) ? item.status : 'Pendiente';
         statusLabel.append(status);
-        status.addEventListener('change', () => {
-          const appointments = readStore(STORAGE.appointments);
-          const current = appointments.find(appointment => String(appointment.id) === String(item.id));
-          if (!current) return;
-          current.status = status.value;
-          if (writeStore(STORAGE.appointments, appointments)) {
-            refreshAdmin();
-          } else {
-            status.value = ['Pendiente', 'Confirmado', 'Cancelado'].includes(item.status)
-              ? item.status
-              : 'Pendiente';
-            const error = document.createElement('small');
-            error.className = 'admin-status-error';
-            error.textContent = 'No se pudo guardar el cambio.';
-            statusLabel.append(error);
+        status.addEventListener('change', async () => {
+          status.disabled = true;
+          try {
+            const { error } = await requireSupabase().from('appointments').update({ status: status.value }).eq('id', item.id);
+            if (error) throw error;
+            await refreshAdmin();
+          } catch (error) {
+            console.error('No se pudo cambiar el estado del turno.', error);
+            status.value = item.status;
+            const detail = document.createElement('small');
+            detail.className = 'admin-status-error';
+            detail.textContent = errorMessage('guardar el estado', error);
+            statusLabel.append(detail);
+            status.disabled = false;
           }
         });
         node.append(statusLabel);
@@ -547,7 +651,6 @@
         dateControl.min = todayString;
         dateControl.value = item.fecha || '';
         dateLabel.append(dateControl);
-
         const timeLabel = document.createElement('label');
         timeLabel.textContent = 'Franja horaria';
         const timeControl = document.createElement('select');
@@ -570,107 +673,125 @@
         }
         timeControl.value = item.horario === 'A convenir' ? '' : (item.horario || '');
         timeLabel.append(timeControl);
-
         const saveSchedule = document.createElement('button');
         saveSchedule.type = 'button';
         saveSchedule.className = 'admin-schedule-save';
         saveSchedule.textContent = 'Guardar cambio';
         const scheduleFeedback = document.createElement('small');
         scheduleFeedback.setAttribute('role', 'status');
-        saveSchedule.addEventListener('click', () => {
-          if (!dateControl.value) {
-            scheduleFeedback.textContent = 'Elegí una fecha.';
-            return;
-          }
-          if (dateControl.value < todayString) {
+        saveSchedule.addEventListener('click', async () => {
+          if (!dateControl.value || dateControl.value < todayString) {
             scheduleFeedback.textContent = 'Elegí una fecha actual o futura.';
             return;
           }
           if (isDateBlocked(dateControl.value)) {
-            scheduleFeedback.textContent = 'Ese día está bloqueado. Habilitalo antes de mover la solicitud.';
+            scheduleFeedback.textContent = 'Ese día está bloqueado. Habilitalo antes de mover el turno.';
             return;
           }
-
-          const appointments = readStore(STORAGE.appointments);
-          const current = appointments.find(appointment => String(appointment.id) === String(item.id));
-          if (!current) return;
-          current.fecha = dateControl.value;
-          current.horario = timeControl.value || 'A convenir';
-          if (writeStore(STORAGE.appointments, appointments)) {
-            refreshAdmin();
-          } else {
-            scheduleFeedback.textContent = 'No se pudo guardar el cambio.';
+          saveSchedule.disabled = true;
+          try {
+            const { error } = await requireSupabase().from('appointments')
+              .update({ appointment_date: dateControl.value, preferred_time: timeControl.value || 'A convenir' })
+              .eq('id', item.id);
+            if (error) throw error;
+            await refreshAdmin();
+          } catch (error) {
+            console.error('No se pudo reprogramar el turno.', error);
+            scheduleFeedback.textContent = errorMessage('guardar el cambio', error);
+            saveSchedule.disabled = false;
           }
         });
         editor.append(dateLabel, timeLabel, saveSchedule, scheduleFeedback);
         node.append(editor);
+        if (item.servicio) {
+          const detail = document.createElement('p');
+          detail.textContent = `Servicio: ${item.servicio}${item.email ? ` · ${item.email}` : ''}${item.mensaje ? ` · ${item.mensaje}` : ''}`;
+          node.append(detail);
+        }
+      } else {
+        const detail = document.createElement('p');
+        detail.textContent = item.comentario || '';
+        node.append(detail);
       }
-      if (type === 'appointment' && item.servicio) {
-        const detail = document.createElement('p'); detail.textContent = `Servicio: ${item.servicio}${item.email ? ` · ${item.email}` : ''}${item.mensaje ? ` · ${item.mensaje}` : ''}`; node.append(detail);
-      }
-      if (type === 'review') { const detail = document.createElement('p'); detail.textContent = item.comentario || ''; node.append(detail); }
       container.append(node);
     });
   }
 
-  function refreshAdmin() {
-    const appointments = readStore(STORAGE.appointments);
-    const reviews = readStore(STORAGE.reviews);
-    $('#appointment-count').textContent = appointments.length;
-    $('#review-count').textContent = reviews.length;
-    $('#image-count').textContent = uploadedImages.length;
-    renderList($('#admin-appointments-list'), appointments, 'appointment');
-    renderList($('#admin-reviews-list'), reviews, 'review');
-    renderCalendar();
+  async function refreshAdmin() {
+    if (!isAdmin) return;
+    try {
+      const client = requireSupabase();
+      const [appointmentsResult, reviewsResult, blockedResult] = await Promise.all([
+        client.from('appointments').select('*').order('created_at', { ascending: false }),
+        client.from('reviews').select('*').order('created_at', { ascending: false }),
+        client.from('blocked_dates').select('blocked_date').order('blocked_date')
+      ]);
+      if (appointmentsResult.error) throw appointmentsResult.error;
+      if (reviewsResult.error) throw reviewsResult.error;
+      if (blockedResult.error) throw blockedResult.error;
+      appointments = (appointmentsResult.data || []).map(mapAppointment);
+      reviews = (reviewsResult.data || []).map(mapReview);
+      blockedDates = (blockedResult.data || []).map(row => row.blocked_date);
+      try {
+        await loadGallery();
+        $('#gallery-feedback').textContent = '';
+      } catch (error) {
+        console.error('No se pudo actualizar la galería del panel.', error);
+        $('#gallery-feedback').textContent = errorMessage('cargar la galería', error);
+      }
+      $('#appointment-count').textContent = appointments.length;
+      $('#review-count').textContent = reviews.length;
+      $('#image-count').textContent = uploadedImages.length;
+      renderList($('#admin-appointments-list'), appointments, 'appointment');
+      renderList($('#admin-reviews-list'), reviews, 'review');
+      renderCalendar();
+      renderBookingDateHint();
+      setAdminFeedback($('#admin-status-feedback'), '');
+    } catch (error) {
+      console.error('No se pudo actualizar el panel administrador.', error);
+      setAdminFeedback($('#admin-status-feedback'), errorMessage('cargar los datos del panel', error));
+    }
   }
 
-  let calendarDate = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-  let selectedCalendarDate = todayString;
-
   function renderCalendarSelection() {
-    const appointments = readStore(STORAGE.appointments)
-      .filter(appointment => appointment.fecha === selectedCalendarDate);
+    const dayAppointments = appointments.filter(appointment => appointment.fecha === selectedCalendarDate);
     const blocked = isDateBlocked(selectedCalendarDate);
     const selectedDate = new Date(`${selectedCalendarDate}T12:00:00`);
-
     $('#calendar-selected-date').textContent = selectedDate.toLocaleDateString('es-AR', {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
     });
     $('#toggle-date-block').textContent = blocked ? 'Habilitar día' : 'Bloquear día';
     $('#toggle-date-block').disabled = selectedCalendarDate < todayString;
     $('#calendar-selected-note').textContent = blocked
-      ? `${appointments.length} solicitud(es) existente(s). El bloqueo impide nuevas solicitudes, pero no cancela las actuales.`
-      : `${appointments.length} solicitud(es). Este día acepta nuevas solicitudes pendientes de confirmación.`;
-    renderList(
-      $('#calendar-day-appointments'),
-      appointments,
-      'appointment',
-      'No hay solicitudes para este día.'
-    );
+      ? `${dayAppointments.length} solicitud(es) existente(s). El bloqueo impide nuevas solicitudes, pero no cancela las actuales.`
+      : `${dayAppointments.length} solicitud(es). Este día acepta nuevas solicitudes pendientes de confirmación.`;
+    renderList($('#calendar-day-appointments'), dayAppointments, 'appointment', 'No hay solicitudes para este día.');
   }
 
   function renderCalendar() {
     const year = calendarDate.getFullYear();
     const month = calendarDate.getMonth();
     $('#calendar-title').textContent = calendarDate.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
-    const grid = $('#calendar-grid'); grid.innerHTML = '';
-    const appointments = readStore(STORAGE.appointments);
-    const blockedDates = readStore(STORAGE.blockedDates);
-
-    ['LU','MA','MI','JU','VI','SÁ','DO'].forEach(day => {
-      const cell = document.createElement('div'); cell.className = 'calendar-cell weekday'; cell.textContent = day; grid.append(cell);
+    const grid = $('#calendar-grid');
+    grid.replaceChildren();
+    ['LU', 'MA', 'MI', 'JU', 'VI', 'SÁ', 'DO'].forEach(day => {
+      const cell = document.createElement('div');
+      cell.className = 'calendar-cell weekday';
+      cell.textContent = day;
+      grid.append(cell);
     });
     const firstDay = (new Date(year, month, 1).getDay() + 6) % 7;
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    for (let i = 0; i < firstDay; i++) { const cell = document.createElement('div'); cell.className = 'calendar-cell is-muted'; cell.textContent = ''; grid.append(cell); }
+    for (let index = 0; index < firstDay; index++) {
+      const cell = document.createElement('div');
+      cell.className = 'calendar-cell is-muted';
+      grid.append(cell);
+    }
     for (let day = 1; day <= daysInMonth; day++) {
       const cell = document.createElement('button');
       const date = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const dayAppointments = appointments.filter(appointment => appointment.fecha === date);
-      const blocked = blockedDates.includes(date);
+      const blocked = isDateBlocked(date);
       cell.type = 'button';
       cell.className = 'calendar-cell calendar-day';
       cell.dataset.date = date;
@@ -705,82 +826,156 @@
     calendarDate = new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1);
     renderCalendar();
   });
-  $('#toggle-date-block').addEventListener('click', () => {
-    const blockedDates = readStore(STORAGE.blockedDates);
-    const index = blockedDates.indexOf(selectedCalendarDate);
-
-    if (index >= 0) blockedDates.splice(index, 1);
-    else blockedDates.push(selectedCalendarDate);
-
-    if (writeStore(STORAGE.blockedDates, blockedDates)) {
-      renderCalendar();
-      renderBookingDateHint();
-    } else {
-      $('#calendar-selected-note').textContent = 'No se pudo guardar el cambio. Revisá el almacenamiento del navegador.';
+  $('#toggle-date-block').addEventListener('click', async () => {
+    const blocked = isDateBlocked(selectedCalendarDate);
+    const button = $('#toggle-date-block');
+    button.disabled = true;
+    try {
+      const request = blocked
+        ? requireSupabase().from('blocked_dates').delete().eq('blocked_date', selectedCalendarDate)
+        : requireSupabase().from('blocked_dates').insert({ blocked_date: selectedCalendarDate });
+      const { error } = await request;
+      if (error) throw error;
+      await refreshAdmin();
+    } catch (error) {
+      console.error('No se pudo modificar la disponibilidad del calendario.', error);
+      $('#calendar-selected-note').textContent = errorMessage('guardar el bloqueo', error);
+      button.disabled = false;
     }
   });
-  renderCalendar();
 
-  // Image previews: shown in the public gallery on this browser only (no remote upload yet).
-  const uploadedImages = [];
-  $('#image-upload').addEventListener('change', event => {
-    [...event.target.files].filter(file => file.type.startsWith('image/')).forEach(file => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        uploadedImages.push({ name: file.name, src: reader.result });
-        renderGallery();
-        renderUploadPreview();
-        refreshAdmin();
-      };
-      reader.readAsDataURL(file);
-    });
-    event.target.value = '';
-  });
-  function renderUploadPreview() {
-    const preview = $('#admin-upload-preview');
-    if (!preview) return;
-    preview.innerHTML = '';
-    uploadedImages.forEach(image => {
-      const thumbnail = document.createElement('img');
-      thumbnail.src = image.src;
-      thumbnail.alt = `Vista previa: ${image.name}`;
-      preview.append(thumbnail);
-    });
-  }
-
+  // Images are stored in the public Supabase Storage bucket; RLS restricts writes to admins.
   function renderGallery() {
-    const gallery = $('#public-gallery'); gallery.innerHTML = '';
+    const gallery = $('#public-gallery');
+    gallery.replaceChildren();
     if (!uploadedImages.length) {
-      gallery.innerHTML = '<div class="gallery-empty"><span>＋</span><p>Próximamente, imágenes de KINESIAR.</p></div>';
+      const empty = document.createElement('div');
+      empty.className = 'gallery-empty';
+      const icon = document.createElement('span');
+      icon.textContent = '＋';
+      const text = document.createElement('p');
+      text.textContent = 'Próximamente, imágenes de KINESIAR.';
+      empty.append(icon, text);
+      gallery.append(empty);
       return;
     }
     uploadedImages.forEach(image => {
-      const figure = document.createElement('figure'); figure.className = 'gallery-photo';
-      const img = document.createElement('img'); img.src = image.src; img.alt = image.name;
-      figure.append(img); gallery.append(figure);
+      const figure = document.createElement('figure');
+      figure.className = 'gallery-photo';
+      const img = document.createElement('img');
+      img.src = image.src;
+      img.alt = image.name;
+      img.loading = 'lazy';
+      figure.append(img);
+      gallery.append(figure);
     });
     $('#image-count').textContent = uploadedImages.length;
   }
-  renderContact();
-  refreshAdmin();
-  renderBookingDateHint();
 
-  window.addEventListener('storage', event => {
-    if (event.key === STORAGE.contact || event.key === null) {
-      renderContact();
-      loadContactForm();
+  function renderUploadPreview() {
+    const preview = $('#admin-upload-preview');
+    if (!preview) return;
+    preview.replaceChildren();
+    uploadedImages.forEach(image => {
+      const item = document.createElement('div');
+      item.className = 'upload-preview__item';
+      const thumbnail = document.createElement('img');
+      thumbnail.src = image.src;
+      thumbnail.alt = `Vista previa: ${image.name}`;
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.textContent = 'Eliminar';
+      remove.setAttribute('aria-label', `Eliminar ${image.name}`);
+      remove.addEventListener('click', async () => {
+        remove.disabled = true;
+        try {
+          const { error } = await requireSupabase().storage.from(STORAGE_BUCKET).remove([image.name]);
+          if (error) throw error;
+          await loadGallery();
+        } catch (error) {
+          console.error('No se pudo eliminar la imagen.', error);
+          remove.disabled = false;
+          window.alert(errorMessage('eliminar la imagen', error));
+        }
+      });
+      item.append(thumbnail, remove);
+      preview.append(item);
+    });
+  }
+
+  async function loadGallery() {
+    const { data, error } = await requireSupabase().storage.from(STORAGE_BUCKET)
+      .list('', { limit: 100, sortBy: { column: 'created_at', order: 'desc' } });
+    if (error) throw error;
+    uploadedImages = (data || [])
+      .filter(file => file.id && file.name)
+      .map(file => {
+        const { data: publicUrl } = supabaseClient.storage.from(STORAGE_BUCKET).getPublicUrl(file.name);
+        return { name: file.name, src: publicUrl.publicUrl };
+      });
+    renderGallery();
+    renderUploadPreview();
+    $('#image-count').textContent = uploadedImages.length;
+  }
+
+  $('#image-upload').addEventListener('change', async event => {
+    const input = event.target;
+    const files = [...input.files];
+    input.value = '';
+    if (!isAdmin) {
+      window.alert('Iniciá sesión como administrador para cargar imágenes.');
+      return;
     }
-    if (event.key === STORAGE.pageContent || event.key === null) {
-      applyPageContent();
-      loadPageContentForm();
+    if (files.some(file => !['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024)) {
+      window.alert('Solo se permiten imágenes JPG, PNG o WEBP de hasta 5 MB cada una.');
+      return;
     }
-    if (
-      event.key === STORAGE.appointments ||
-      event.key === STORAGE.blockedDates ||
-      event.key === null
-    ) {
-      refreshAdmin();
-      renderBookingDateHint();
+    for (const file of files) {
+      const safeName = file.name.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9._-]/g, '-');
+      const path = `${Date.now()}-${crypto.randomUUID()}-${safeName}`;
+      try {
+        const { error } = await requireSupabase().storage.from(STORAGE_BUCKET).upload(path, file, {
+          contentType: file.type,
+          upsert: false
+        });
+        if (error) throw error;
+      } catch (error) {
+        console.error(`No se pudo subir ${file.name}.`, error);
+        window.alert(errorMessage(`subir ${file.name}`, error));
+        break;
+      }
+    }
+    try {
+      await loadGallery();
+    } catch (error) {
+      console.error('No se pudo refrescar la galería después de la carga.', error);
+      $('#gallery-feedback').textContent = errorMessage('cargar la galería', error);
     }
   });
+
+  async function initialize() {
+    renderContact();
+    applyPageContent();
+    loadContactForm();
+    loadPageContentForm();
+    renderCalendar();
+    renderBookingDateHint();
+    if (!supabaseClient) {
+      backendReady = false;
+      setFeedback($('#booking-feedback'), 'No se pudo inicializar Supabase. Revisá la conexión y la configuración del sitio.', 'warning');
+      renderGallery();
+      return;
+    }
+    await loadPublicData();
+    try {
+      await loadGallery();
+    } catch (error) {
+      console.error('No se pudo cargar la galería de Supabase Storage.', error);
+      $('#gallery-feedback').textContent = errorMessage('cargar la galería', error);
+    }
+    await restoreAdminSession();
+    if (isAdmin) await refreshAdmin();
+  }
+
+  initialize();
 })();

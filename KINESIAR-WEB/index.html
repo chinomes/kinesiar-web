@@ -10,6 +10,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/estilos.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+  <script src="js/supabase-config.js" defer></script>
   <script src="js/funciones.js" defer></script>
 </head>
 <body>
@@ -167,7 +169,7 @@
     </section>
 
     <section class="gallery section-shell" id="galeria">
-      <div class="gallery__header"><div><p class="eyebrow"><span></span> KINESIAR EN IMÁGENES</p><h2>Un espacio para<br><em>compartir.</em></h2></div><p>Las imágenes que se carguen desde el panel aparecerán aquí en esta vista de prueba. Luego conectaremos la carga para que se publiquen para todos los visitantes.</p></div>
+      <div class="gallery__header"><div><p class="eyebrow"><span></span> KINESIAR EN IMÁGENES</p><h2>Un espacio para<br><em>compartir.</em></h2></div><p>Las imágenes que cargue el administrador se guardarán en Supabase y aparecerán para todos los visitantes.</p></div>
       <div class="gallery-grid" id="public-gallery"><div class="gallery-empty"><span>＋</span><p>Próximamente, imágenes de KINESIAR.</p></div></div>
     </section>
   </main>
@@ -198,12 +200,12 @@
       <button class="modal__close" type="button" data-close-admin aria-label="Cerrar">×</button>
       <div class="admin-login" id="admin-login">
         <div class="admin-box__logo"><img src="assets/img/logo-kinesiar.png" alt="Logo KINESIAR"></div>
-        <p class="eyebrow"><span></span> ÁREA PRIVADA · MAQUETA</p>
+        <p class="eyebrow"><span></span> ÁREA PRIVADA · SUPABASE AUTH</p>
         <h2 id="admin-title">Panel de<br><em>administración.</em></h2>
-        <p class="admin-hint">El acceso se valida en este navegador. Sin un servidor, no protege la administración de forma segura ni oculta los datos del sitio.</p>
+        <p class="admin-hint">Ingresá con la cuenta autorizada en Supabase. La contraseña no se guarda en esta página.</p>
         <form id="admin-login-form" class="admin-login-form">
-          <label class="field"><span>Usuario</span><input name="usuario" type="text" placeholder="Usuario administrador" required></label>
-          <label class="field"><span>Contraseña</span><input name="clave" type="password" placeholder="Contraseña" required></label>
+          <label class="field"><span>Correo administrador</span><input name="email" type="email" placeholder="tu correo de administrador" autocomplete="username" required></label>
+          <label class="field"><span>Contraseña</span><input name="password" type="password" placeholder="Contraseña" autocomplete="current-password" required></label>
           <button class="button button--orange button--full" type="submit">Ingresar al panel <span>↗</span></button>
           <p id="admin-login-feedback" class="admin-save-feedback" role="status" aria-live="polite"></p>
         </form>
@@ -211,7 +213,8 @@
       <div class="admin-dashboard" id="admin-dashboard" hidden>
         <p class="eyebrow"><span></span> KINESIAR · ADMINISTRACIÓN</p>
         <h2>Panel de <em>control.</em></h2>
-        <p class="admin-hint">Los cambios y solicitudes se guardan solo en este navegador. Las solicitudes quedan pendientes hasta que las confirmes.</p>
+        <p class="admin-hint">Las solicitudes y los cambios se guardan en Supabase. Confirmá los turnos después de coordinar con cada persona.</p>
+        <p id="admin-status-feedback" class="admin-save-feedback" role="status" aria-live="polite"></p>
         <div class="admin-stats"><div><b id="appointment-count">0</b><span>Solicitudes</span></div><div><b id="review-count">0</b><span>Opiniones</span></div><div><b id="image-count">0</b><span>Imágenes</span></div></div>
         <div class="admin-tabs"><button class="admin-tab is-active" data-tab="appointments" type="button">Turnos</button><button class="admin-tab" data-tab="reviews" type="button">Opiniones</button><button class="admin-tab" data-tab="calendar" type="button">Calendario</button><button class="admin-tab" data-tab="page" type="button">Contenido</button><button class="admin-tab" data-tab="uploads" type="button">Imágenes</button><button class="admin-tab" data-tab="contact" type="button">Contacto</button></div>
         <div class="admin-content" id="admin-appointments"><h3>Solicitudes recibidas</h3><div id="admin-appointments-list" class="admin-list"></div></div>
@@ -227,11 +230,11 @@
             <h4 class="calendar-appointments-title">Solicitudes de este día</h4>
             <div id="calendar-day-appointments" class="admin-list"></div>
           </section>
-          <p class="calendar-note">El calendario y las reservas se guardan localmente en este navegador; no se comparten entre dispositivos ni reemplazan una agenda conectada.</p>
+          <p class="calendar-note">Los días bloqueados no aceptan nuevas solicitudes. Las reservas existentes siguen visibles para el administrador.</p>
         </div>
         <div class="admin-content" id="admin-page" hidden>
           <h3>Editar textos de la página</h3>
-          <p class="admin-hint">Estos cambios se aplican al contenido público y quedan guardados en este navegador.</p>
+          <p class="admin-hint">Estos cambios se aplican al contenido público y quedan guardados en Supabase.</p>
           <form id="page-content-form" class="admin-contact-form">
             <div class="admin-contact-grid">
               <label class="field"><span>Título principal · primera línea</span><input name="heroTitleFirst" type="text" required></label>
@@ -248,10 +251,10 @@
             <div class="admin-contact-actions"><button class="button button--orange" type="submit">Guardar textos <span>✓</span></button><p id="page-save-feedback" class="admin-save-feedback" role="status" aria-live="polite"></p></div>
           </form>
         </div>
-        <div class="admin-content" id="admin-uploads" hidden><h3>Agregar imágenes a la página</h3><p class="admin-hint">Seleccioná archivos JPG, PNG o WEBP. En esta maqueta se verán en el navegador actual; no se publican para otros visitantes.</p><label class="upload-zone"><input type="file" id="image-upload" accept="image/png,image/jpeg,image/webp" multiple><span>＋</span><b>Elegir imágenes</b><small>JPG, PNG o WEBP</small></label><div id="admin-upload-preview" class="upload-preview"></div></div>
+        <div class="admin-content" id="admin-uploads" hidden><h3>Agregar imágenes a la página</h3><p class="admin-hint">Seleccioná archivos JPG, PNG o WEBP. Se publicarán desde el almacenamiento de Supabase.</p><label class="upload-zone"><input type="file" id="image-upload" accept="image/png,image/jpeg,image/webp" multiple><span>＋</span><b>Elegir imágenes</b><small>JPG, PNG o WEBP · hasta 5 MB cada una</small></label><p id="gallery-feedback" class="admin-save-feedback" role="status" aria-live="polite"></p><div id="admin-upload-preview" class="upload-preview"></div></div>
         <div class="admin-content" id="admin-contact" hidden>
           <h3>Editar información de contacto</h3>
-          <p class="admin-hint">Completá o modificá los datos que querés mostrar públicamente. Al guardar, la sección Contacto se actualiza en esta página.</p>
+          <p class="admin-hint">Completá o modificá los datos públicos del consultorio. Los cambios se guardarán en Supabase.</p>
           <form id="contact-form" class="admin-contact-form">
             <div class="admin-contact-grid">
               <label class="field"><span>WhatsApp (con código de país)</span><input name="whatsapp" type="tel" placeholder="Ej. 5493875551234" autocomplete="tel"></label>
@@ -268,7 +271,7 @@
             <div class="admin-contact-actions"><button class="button button--orange" type="submit">Guardar información <span>✓</span></button><p id="contact-save-feedback" class="admin-save-feedback" role="status" aria-live="polite"></p></div>
           </form>
         </div>
-        <div class="admin-bottom"><span>DATOS LOCALES · SIN SERVIDOR</span><button id="admin-logout" type="button">Cerrar sesión</button></div>
+        <div class="admin-bottom"><span>SUPABASE · DATOS COMPARTIDOS</span><button id="admin-logout" type="button">Cerrar sesión</button></div>
       </div>
     </section>
   </div>
