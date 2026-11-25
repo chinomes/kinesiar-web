@@ -435,7 +435,7 @@
   const loginFeedback = $('#admin-login-feedback');
 
   const showAdminModal = () => {
-    $('#admin-login').hidden = !isAdmin;
+    $('#admin-login').hidden = isAdmin;
     $('#admin-dashboard').hidden = !isAdmin;
     loginFeedback.textContent = '';
     modal.classList.add('is-open');
