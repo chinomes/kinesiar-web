@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f47719">
+  <meta name="description" content="KINESIAR · Fisioterapia y kinesiología. Cuidado, movimiento y bienestar.">
+  <title>KINESIAR | Fisioterapia y Kinesiología</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/estilos.css">
+  <script src="js/funciones.js" defer></script>
+</head>
+<body>
+  <div class="ambient ambient--one" aria-hidden="true"></div>
+  <div class="ambient ambient--two" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <a class="brand" href="#inicio" aria-label="KINESIAR, ir al inicio">
+      <img src="assets/img/logo-kinesiar.png" alt="Logo de KINESIAR" class="brand__logo">
+      <span class="brand__name">KINESIAR<span>FISIOTERAPIA Y KINESIOLOGÍA</span></span>
+    </a>
+    <button class="admin-entry" id="open-admin" type="button">
+      <span class="admin-entry__icon" aria-hidden="true">⌘</span>
+      <span>Acceso administrador</span>
+    </button>
+  </header>
+
+  <main>
+    <section class="hero section-shell" id="inicio">
+      <div class="hero__copy">
+        <p class="eyebrow"><span></span> MOVIMIENTO · SALUD · BIENESTAR</p>
+        <h1><span id="hero-title-first">Volvé a moverte.</span><br><em id="hero-title-second">Sentite mejor.</em></h1>
+        <p class="hero__lead" id="hero-description">Un espacio dedicado a acompañarte en tu recuperación, cuidar tu cuerpo y ayudarte a volver a disfrutar del movimiento.</p>
+        <div class="hero__actions">
+          <a class="button button--orange" href="#turnos">Solicitar un turno <span aria-hidden="true">↗</span></a>
+          <a class="text-link" href="#servicios">Conocer los servicios <span aria-hidden="true">↓</span></a>
+        </div>
+        <div class="hero__note"><span class="pulse-dot"></span> Atención personalizada · KINESIAR</div>
+      </div>
+
+      <aside class="video-side" aria-label="Video de presentación de KINESIAR">
+        <div class="video-side__frame">
+          <video class="video-side__video" autoplay muted loop playsinline preload="metadata" poster="assets/img/logo-kinesiar.png">
+            <source src="assets/video/fondo.mp4" type="video/mp4">
+            Tu navegador no admite videos HTML5.
+          </video>
+          <div class="video-side__shade"></div>
+          <span class="video-side__tag"><span></span> KINESIAR EN MOVIMIENTO</span>
+          <div class="video-side__caption"><b>El movimiento<br>también es bienestar.</b><small>Fisioterapia y kinesiología</small></div>
+        </div>
+        <div class="video-side__orbit video-side__orbit--one" aria-hidden="true"></div>
+        <div class="video-side__orbit video-side__orbit--two" aria-hidden="true"></div>
+      </aside>
+      <div class="hero__scroll" aria-hidden="true"><span></span> DESLIZÁ PARA EXPLORAR</div>
+    </section>
+
+    <section class="services section-shell" id="servicios">
+      <div class="section-heading">
+        <p class="eyebrow"><span></span> LO QUE HACEMOS</p>
+        <h2>Un camino hacia<br><em>tu bienestar.</em></h2>
+        <p>Conocé nuestros servicios y cómo podemos acompañarte. Sus nombres y descripciones se pueden editar desde el panel de administración.</p>
+      </div>
+      <div class="service-cards" aria-label="Tarjetas de servicios. Pasá el cursor o tocá una tarjeta para girarla.">
+        <article class="service-card service-card--one" tabindex="0" role="button" aria-pressed="false" aria-label="Girar tarjeta de rehabilitación">
+          <div class="service-card__inner">
+            <div class="service-card__face service-card__front">
+              <div class="service-card__number">01 / SERVICIO</div>
+              <div class="service-card__art art--rehab"><span class="art__ring"></span><span class="art__figure">✳</span><span class="art__small">K</span></div>
+              <div class="service-card__title"><span>01</span><h3 id="service-one-title">Rehabilitación</h3></div>
+              <div class="service-card__hint">Pasá el cursor o tocá para descubrir <span>↗</span></div>
+            </div>
+            <div class="service-card__face service-card__back">
+              <span class="back-label">KINESIAR · 01</span>
+              <div class="back-icon">✳</div>
+              <h3 id="service-one-back-title">Rehabilitación</h3>
+              <p id="service-one-description">Acá agregaremos la información de este servicio, sus beneficios y cómo podemos acompañarte.</p>
+              <span class="back-more">MÁS INFORMACIÓN <b>↗</b></span>
+            </div>
+          </div>
+        </article>
+
+        <article class="service-card service-card--two" tabindex="0" role="button" aria-pressed="false" aria-label="Girar tarjeta de kinesiología">
+          <div class="service-card__inner">
+            <div class="service-card__face service-card__front">
+              <div class="service-card__number">02 / SERVICIO</div>
+              <div class="service-card__art art--kine"><span class="art__ring"></span><span class="art__figure">◎</span><span class="art__small">K</span></div>
+              <div class="service-card__title"><span>02</span><h3 id="service-two-title">Kinesiología</h3></div>
+              <div class="service-card__hint">Pasá el cursor o tocá para descubrir <span>↗</span></div>
+            </div>
+            <div class="service-card__face service-card__back">
+              <span class="back-label">KINESIAR · 02</span>
+              <div class="back-icon">◎</div>
+              <h3 id="service-two-back-title">Kinesiología</h3>
+              <p id="service-two-description">En este espacio irá la descripción que definamos para presentar este servicio.</p>
+              <span class="back-more">MÁS INFORMACIÓN <b>↗</b></span>
+            </div>
+          </div>
+        </article>
+
+        <article class="service-card service-card--three" tabindex="0" role="button" aria-pressed="false" aria-label="Girar tarjeta de bienestar">
+          <div class="service-card__inner">
+            <div class="service-card__face service-card__front">
+              <div class="service-card__number">03 / SERVICIO</div>
+              <div class="service-card__art art--well"><span class="art__ring"></span><span class="art__figure">〰</span><span class="art__small">K</span></div>
+              <div class="service-card__title"><span>03</span><h3 id="service-three-title">Bienestar</h3></div>
+              <div class="service-card__hint">Pasá el cursor o tocá para descubrir <span>↗</span></div>
+            </div>
+            <div class="service-card__face service-card__back">
+              <span class="back-label">KINESIAR · 03</span>
+              <div class="back-icon">〰</div>
+              <h3 id="service-three-back-title">Bienestar</h3>
+              <p id="service-three-description">La información, imagen y contenido de esta tarjeta se completarán más adelante.</p>
+              <span class="back-more">MÁS INFORMACIÓN <b>↗</b></span>
+            </div>
+          </div>
+        </article>
+      </div>
+      <p class="cards-tip"><span>↻</span> Cada tarjeta flota y gira para mostrar su información. En celular, tocala para darla vuelta.</p>
+    </section>
+
+    <section class="booking section-shell" id="turnos">
+      <div class="booking__intro">
+        <p class="eyebrow"><span></span> ESTAMOS PARA ACOMPAÑARTE</p>
+        <h2>Tu próximo paso<br><em>empieza acá.</em></h2>
+        <p id="booking-description">Completá tus datos y tu preferencia de horario. Tu solicitud quedará pendiente hasta que el consultorio la confirme.</p>
+        <div class="booking__stamp"><span>✳</span><div><b>Atención personalizada</b><small>Tu bienestar, nuestra prioridad.</small></div></div>
+      </div>
+      <form class="form-panel" id="booking-form" novalidate>
+        <div class="form-panel__head"><div><span class="form-kicker">SOLICITUD DE TURNO</span><h3>Solicitar turno</h3></div><span class="form-step">01 <i>/ 01</i></span></div>
+        <div class="form-grid">
+          <label class="field"><span>Nombre y apellido <b>*</b></span><input name="nombre" type="text" placeholder="Ej. María Pérez" autocomplete="name" required></label>
+          <label class="field"><span>Teléfono / WhatsApp <b>*</b></span><input name="telefono" type="tel" placeholder="Ej. 387 555 1234" autocomplete="tel" required></label>
+          <label class="field"><span>Correo electrónico</span><input name="email" type="email" placeholder="nombre@correo.com" autocomplete="email"></label>
+          <label class="field"><span>¿Qué atención necesitás? <b>*</b></span><select name="servicio" required><option value="">Seleccioná una opción</option><option>Consulta de kinesiología</option><option>Rehabilitación</option><option>Otro / Necesito orientación</option></select></label>
+          <label class="field"><span>Fecha preferida <b>*</b></span><input name="fecha" type="date" required><small class="field-hint" id="booking-date-hint" role="status">Las fechas bloqueadas no aceptan solicitudes.</small></label>
+          <label class="field"><span>Horario preferido</span><select name="horario"><option value="">A convenir</option><option>Mañana</option><option>Mediodía</option><option>Tarde</option></select></label>
+          <label class="field field--wide"><span>Contanos brevemente el motivo de la consulta</span><textarea name="mensaje" rows="3" placeholder="Escribí aquí tu consulta (opcional)"></textarea></label>
+        </div>
+        <label class="check-line"><input type="checkbox" name="privacidad" required><span>Autorizo que se contacten conmigo para coordinar el turno. <b>*</b></span></label>
+        <div class="form-footer"><p class="form-note">* Campos obligatorios</p><button class="submit-ball" type="submit"><span class="submit-ball__text">Enviar solicitud <b>↗</b></span><span class="submit-ball__icon" aria-hidden="true"></span></button></div>
+        <p class="form-feedback" id="booking-feedback" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <section class="contact section-shell" id="contacto">
+      <div class="section-heading section-heading--row">
+        <div><p class="eyebrow"><span></span> CONECTEMOS</p><h2>Estamos cerca<br><em>para ayudarte.</em></h2></div>
+        <p id="contact-description">Los datos de contacto se podrán actualizar desde el panel de administración.</p>
+      </div>
+      <div class="contact-grid" id="contact-grid" aria-live="polite"></div>
+    </section>
+
+    <section class="reviews section-shell" id="opiniones">
+      <div class="reviews__intro"><p class="eyebrow"><span></span> TU EXPERIENCIA IMPORTA</p><h2>Contanos cómo<br><em>te fue.</em></h2><p>Tu opinión ayuda a otras personas y nos permite seguir mejorando.</p></div>
+      <form class="review-panel" id="review-form" novalidate>
+        <div class="review-panel__top"><div><small>COMPARTÍ TU EXPERIENCIA</small><h3>Dejanos tu comentario</h3></div><span class="review-spark">✳</span></div>
+        <label class="field"><span>Tu nombre <b>*</b></span><input name="nombre" type="text" placeholder="¿Cómo te llamás?" required></label>
+        <div class="rating-field"><span>Tu puntuación <b>*</b></span><div class="stars" role="radiogroup" aria-label="Puntuación de 1 a 5 estrellas">
+          <button type="button" data-rating="1" aria-label="1 estrella">★</button><button type="button" data-rating="2" aria-label="2 estrellas">★</button><button type="button" data-rating="3" aria-label="3 estrellas">★</button><button type="button" data-rating="4" aria-label="4 estrellas">★</button><button type="button" data-rating="5" aria-label="5 estrellas">★</button>
+        </div><input type="hidden" name="puntuacion" value=""></div>
+        <label class="field"><span>Comentario <b>*</b></span><textarea name="comentario" rows="4" placeholder="Escribí tu experiencia..." required></textarea></label>
+        <div class="review-panel__footer"><p class="form-note">* Campos obligatorios</p><button class="submit-ball submit-ball--review" type="submit"><span class="submit-ball__text">Publicar opinión <b>↗</b></span><span class="submit-ball__icon" aria-hidden="true"></span></button></div>
+        <p class="form-feedback" id="review-feedback" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <section class="gallery section-shell" id="galeria">
+      <div class="gallery__header"><div><p class="eyebrow"><span></span> KINESIAR EN IMÁGENES</p><h2>Un espacio para<br><em>compartir.</em></h2></div><p>Las imágenes que se carguen desde el panel aparecerán aquí en esta vista de prueba. Luego conectaremos la carga para que se publiquen para todos los visitantes.</p></div>
+      <div class="gallery-grid" id="public-gallery"><div class="gallery-empty"><span>＋</span><p>Próximamente, imágenes de KINESIAR.</p></div></div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <a class="footer__brand" href="#inicio"><img src="assets/img/logo-kinesiar.png" alt=""><b>KINESIAR</b></a>
+    <span>FISIOTERAPIA Y KINESIOLOGÍA</span>
+    <small>© <span id="year"></span> KINESIAR · Diseño inicial</small>
+  </footer>
+
+  <nav class="orbit-menu" id="orbit-menu" aria-label="Menú principal">
+    <div class="orbit-menu__links" id="menu-links">
+      <a href="#inicio"><span>01</span> Inicio</a>
+      <a href="#servicios"><span>02</span> Servicios</a>
+      <a href="#turnos"><span>03</span> Pedir turno</a>
+      <a href="#contacto"><span>04</span> Contacto</a>
+      <a href="#opiniones"><span>05</span> Opiniones</a>
+    </div>
+    <button class="orbit-button" id="orbit-toggle" type="button" aria-expanded="false" aria-label="Abrir menú">
+      <span class="orbit-button__halo"></span><img src="assets/img/logo-kinesiar.png" alt=""><i class="orbit-button__plus">+</i>
+    </button>
+    <span class="orbit-menu__label">MENÚ</span>
+  </nav>
+
+  <div class="modal" id="admin-modal" aria-hidden="true">
+    <div class="modal__backdrop" data-close-admin></div>
+    <section class="admin-box" role="dialog" aria-modal="true" aria-labelledby="admin-title">
+      <button class="modal__close" type="button" data-close-admin aria-label="Cerrar">×</button>
+      <div class="admin-login" id="admin-login">
+        <div class="admin-box__logo"><img src="assets/img/logo-kinesiar.png" alt="Logo KINESIAR"></div>
+        <p class="eyebrow"><span></span> ÁREA PRIVADA · MAQUETA</p>
+        <h2 id="admin-title">Panel de<br><em>administración.</em></h2>
+        <p class="admin-hint">El acceso se valida en este navegador. Sin un servidor, no protege la administración de forma segura ni oculta los datos del sitio.</p>
+        <form id="admin-login-form" class="admin-login-form">
+          <label class="field"><span>Usuario</span><input name="usuario" type="text" placeholder="Usuario administrador" required></label>
+          <label class="field"><span>Contraseña</span><input name="clave" type="password" placeholder="Contraseña" required></label>
+          <button class="button button--orange button--full" type="submit">Ingresar al panel <span>↗</span></button>
+          <p id="admin-login-feedback" class="admin-save-feedback" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+      <div class="admin-dashboard" id="admin-dashboard" hidden>
+        <p class="eyebrow"><span></span> KINESIAR · ADMINISTRACIÓN</p>
+        <h2>Panel de <em>control.</em></h2>
+        <p class="admin-hint">Los cambios y solicitudes se guardan solo en este navegador. Las solicitudes quedan pendientes hasta que las confirmes.</p>
+        <div class="admin-stats"><div><b id="appointment-count">0</b><span>Solicitudes</span></div><div><b id="review-count">0</b><span>Opiniones</span></div><div><b id="image-count">0</b><span>Imágenes</span></div></div>
+        <div class="admin-tabs"><button class="admin-tab is-active" data-tab="appointments" type="button">Turnos</button><button class="admin-tab" data-tab="reviews" type="button">Opiniones</button><button class="admin-tab" data-tab="calendar" type="button">Calendario</button><button class="admin-tab" data-tab="page" type="button">Contenido</button><button class="admin-tab" data-tab="uploads" type="button">Imágenes</button><button class="admin-tab" data-tab="contact" type="button">Contacto</button></div>
+        <div class="admin-content" id="admin-appointments"><h3>Solicitudes recibidas</h3><div id="admin-appointments-list" class="admin-list"></div></div>
+        <div class="admin-content" id="admin-reviews" hidden><h3>Comentarios recibidos</h3><div id="admin-reviews-list" class="admin-list"></div></div>
+        <div class="admin-content" id="admin-calendar" hidden>
+          <div class="calendar-head"><button id="calendar-prev" type="button" aria-label="Mes anterior">‹</button><h3 id="calendar-title"></h3><button id="calendar-next" type="button" aria-label="Mes siguiente">›</button></div>
+          <div class="calendar-grid" id="calendar-grid"></div>
+          <div class="calendar-legend"><span><i class="calendar-legend__booking"></i> Solicitudes</span><span><i class="calendar-legend__blocked"></i> Bloqueado</span></div>
+          <section class="calendar-selection" aria-live="polite">
+            <h4 id="calendar-selected-date">Seleccioná un día</h4>
+            <p id="calendar-selected-note" class="calendar-note">Los días no bloqueados aceptan solicitudes pendientes de confirmación.</p>
+            <button id="toggle-date-block" class="button button--orange calendar-block-button" type="button" disabled>Bloquear día</button>
+            <h4 class="calendar-appointments-title">Solicitudes de este día</h4>
+            <div id="calendar-day-appointments" class="admin-list"></div>
+          </section>
+          <p class="calendar-note">El calendario y las reservas se guardan localmente en este navegador; no se comparten entre dispositivos ni reemplazan una agenda conectada.</p>
+        </div>
+        <div class="admin-content" id="admin-page" hidden>
+          <h3>Editar textos de la página</h3>
+          <p class="admin-hint">Estos cambios se aplican al contenido público y quedan guardados en este navegador.</p>
+          <form id="page-content-form" class="admin-contact-form">
+            <div class="admin-contact-grid">
+              <label class="field"><span>Título principal · primera línea</span><input name="heroTitleFirst" type="text" required></label>
+              <label class="field"><span>Título principal · segunda línea</span><input name="heroTitleSecond" type="text" required></label>
+              <label class="field field--wide"><span>Presentación de inicio</span><textarea name="heroDescription" rows="3" required></textarea></label>
+              <label class="field field--wide"><span>Texto de la sección de turnos</span><textarea name="bookingDescription" rows="3" required></textarea></label>
+              <label class="field"><span>Servicio 1 · nombre</span><input name="serviceOneTitle" type="text" required></label>
+              <label class="field"><span>Servicio 1 · descripción</span><textarea name="serviceOneDescription" rows="3" required></textarea></label>
+              <label class="field"><span>Servicio 2 · nombre</span><input name="serviceTwoTitle" type="text" required></label>
+              <label class="field"><span>Servicio 2 · descripción</span><textarea name="serviceTwoDescription" rows="3" required></textarea></label>
+              <label class="field"><span>Servicio 3 · nombre</span><input name="serviceThreeTitle" type="text" required></label>
+              <label class="field"><span>Servicio 3 · descripción</span><textarea name="serviceThreeDescription" rows="3" required></textarea></label>
+            </div>
+            <div class="admin-contact-actions"><button class="button button--orange" type="submit">Guardar textos <span>✓</span></button><p id="page-save-feedback" class="admin-save-feedback" role="status" aria-live="polite"></p></div>
+          </form>
+        </div>
+        <div class="admin-content" id="admin-uploads" hidden><h3>Agregar imágenes a la página</h3><p class="admin-hint">Seleccioná archivos JPG, PNG o WEBP. En esta maqueta se verán en el navegador actual; no se publican para otros visitantes.</p><label class="upload-zone"><input type="file" id="image-upload" accept="image/png,image/jpeg,image/webp" multiple><span>＋</span><b>Elegir imágenes</b><small>JPG, PNG o WEBP</small></label><div id="admin-upload-preview" class="upload-preview"></div></div>
+        <div class="admin-content" id="admin-contact" hidden>
+          <h3>Editar información de contacto</h3>
+          <p class="admin-hint">Completá o modificá los datos que querés mostrar públicamente. Al guardar, la sección Contacto se actualiza en esta página.</p>
+          <form id="contact-form" class="admin-contact-form">
+            <div class="admin-contact-grid">
+              <label class="field"><span>WhatsApp (con código de país)</span><input name="whatsapp" type="tel" placeholder="Ej. 5493875551234" autocomplete="tel"></label>
+              <label class="field"><span>Teléfono alternativo</span><input name="telefono" type="tel" placeholder="Ej. 0387 455 1234"></label>
+              <label class="field"><span>Correo electrónico</span><input name="email" type="email" placeholder="consultas@kinesiar.com"></label>
+              <label class="field"><span>Dirección</span><input name="direccion" type="text" placeholder="Calle y número"></label>
+              <label class="field"><span>Ciudad / provincia</span><input name="ciudad" type="text" placeholder="Salta, Argentina"></label>
+              <label class="field"><span>Instagram</span><input name="instagram" type="text" placeholder="@usuario o enlace del perfil"></label>
+              <label class="field"><span>Facebook</span><input name="facebook" type="text" placeholder="Nombre o enlace de la página"></label>
+              <label class="field"><span>Sitio web</span><input name="web" type="url" placeholder="https://..." inputmode="url"></label>
+              <label class="field field--wide"><span>Horarios de atención</span><input name="horarios" type="text" placeholder="Ej. Lunes a viernes de 9 a 18 h"></label>
+              <label class="field field--wide"><span>Texto de presentación de contacto</span><textarea name="descripcion" rows="3" placeholder="Una breve invitación para que las personas se comuniquen..."></textarea></label>
+            </div>
+            <div class="admin-contact-actions"><button class="button button--orange" type="submit">Guardar información <span>✓</span></button><p id="contact-save-feedback" class="admin-save-feedback" role="status" aria-live="polite"></p></div>
+          </form>
+        </div>
+        <div class="admin-bottom"><span>DATOS LOCALES · SIN SERVIDOR</span><button id="admin-logout" type="button">Cerrar sesión</button></div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>
